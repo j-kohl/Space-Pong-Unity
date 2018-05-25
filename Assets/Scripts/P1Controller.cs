@@ -22,7 +22,6 @@ public class P1Controller : MonoBehaviour
    public RectTransform laserButtonRect;  
    private bool hitByLaser = false;   
    private bool hitByMissile = false;
-   private int tapCount;
    private float doubleTapTimer;
    private bool hasItem;
    private int missileAmmo;
@@ -30,7 +29,7 @@ public class P1Controller : MonoBehaviour
    private float shieldDuration;
    private bool shieldActive;
    private enum HitType {LASER, MISSILE};
-
+   private float lastTouchStartTime;
    void Start()
    {
       rect = new Rect(0, 0, Screen.width, Screen.height / 2);
@@ -45,27 +44,7 @@ public class P1Controller : MonoBehaviour
          hasItem = false;
       }   
       else
-         shieldDuration -= Time.deltaTime;
-
-      if (Input.touchCount == 1 && Input.GetTouch(0).phase == TouchPhase.Began)
-      {
-         tapCount++;
-      }
-      if (tapCount > 0)
-      {
-         doubleTapTimer += Time.deltaTime;
-      }
-      if (tapCount >= 2)
-      {
-         doubleTapTimer = 0.0f;
-         tapCount = 0;
-      }
-      if (doubleTapTimer > 0.5f)
-      {
-         Debug.Log("Double Tap");
-         doubleTapTimer = 0f;
-         tapCount = 0;
-      }
+         shieldDuration -= Time.deltaTime;      
    }
 
    void FixedUpdate()
@@ -81,11 +60,16 @@ public class P1Controller : MonoBehaviour
          {
             foreach (Touch touch in Input.touches)
             {
-               if (touch.phase == TouchPhase.Began && !moving)
+               if (touch.phase == TouchPhase.Began)
                {
-                  tapCount++;
-                  trackedTouchId = touch.fingerId;
-                  moving = true;                  
+                  if(touch.tapCount == 2)
+                  { 
+                     shootLaser();                      
+                  }
+                  if(!moving){                    
+                     trackedTouchId = touch.fingerId;
+                     moving = true;
+                  }                  
                }
                if ((touch.phase == TouchPhase.Stationary || touch.phase == TouchPhase.Moved))
                {

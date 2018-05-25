@@ -15,7 +15,7 @@ public class ItemSpawner : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		if(timeElapsed < 15){
+		if(timeElapsed < 10){
 			timeElapsed += Time.deltaTime;
 		}else{
 			spawnItem();

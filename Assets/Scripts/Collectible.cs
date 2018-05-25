@@ -4,16 +4,14 @@ using UnityEngine;
 
 public class Collectible : MonoBehaviour {
 
+	private ParticleSystem explosion;
 	private ParticleSystem ring;
-   ParticleSystem.EmissionModule emissionModule;
-	private ParticleSystem.MinMaxCurve originalEmissionRate; 
-
+   private bool hit = false;
 	// Use this for initialization
 	void Start () {
-		ring = gameObject.transform.GetChild(0).gameObject.GetComponent<ParticleSystem>();
-		emissionModule = ring.emission;
-		originalEmissionRate = emissionModule.rateOverTime;
-		emissionModule.rateOverTime = 0;
+		explosion = gameObject.transform.GetChild(0).gameObject.GetComponent<ParticleSystem>();
+		ring = gameObject.GetComponent<ParticleSystem>();
+		explosion.Stop();
 	}
 	
 	// Update is called once per frame
@@ -23,9 +21,12 @@ public class Collectible : MonoBehaviour {
 
 	private void OnTriggerEnter(Collider other) {
 		if(other.tag.Equals("Ball")){
-			emissionModule.rateOverTime = originalEmissionRate;
+			if(!hit){
+				explosion.Play();
+				ring.Stop(false);
+				hit = true;
+			}
 		}
-
-		Destroy(this,2);
+		Destroy(gameObject,2);
 	}
 }
