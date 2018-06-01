@@ -38,6 +38,7 @@ public class ItemSpawner : MonoBehaviour {
 				break;
 		}
 		float xPos = Random.Range(-2.5f,2.5f);
-		Instantiate(toSpawn, new Vector3(xPos,0,0), toSpawn.transform.rotation);
+		float zPos = Random.Range(-3.5f,3.5f);
+		Instantiate(toSpawn, new Vector3(xPos,0,zPos), toSpawn.transform.rotation);
 	}	
 }

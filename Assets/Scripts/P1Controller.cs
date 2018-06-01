@@ -19,39 +19,52 @@ public class P1Controller : MonoBehaviour
    public float nextFire;
    public float fireRate;
    public RectTransform missileButtonRect;
-   public RectTransform laserButtonRect;  
-   private bool hitByLaser = false;   
+   public RectTransform laserButtonRect;
+   private bool hitByLaser = false;
    private bool hitByMissile = false;
    private float doubleTapTimer;
-   private bool hasItem;
+   private bool hasShield;
+   private bool hasLaser;
+   private bool hasMissile;
    private int missileAmmo;
    private int laserAmmo;
    private float shieldDuration;
    private bool shieldActive;
-   private enum HitType {LASER, MISSILE};
+   private enum HitType { LASER, MISSILE };
+   public enum ItemType { NONE, SHIELD, LASER, MISSILE };
    private float lastTouchStartTime;
+   private ItemType currentItem;
+   public Text itemText;
+
    void Start()
    {
       rect = new Rect(0, 0, Screen.width, Screen.height / 2);
       rb = gameObject.GetComponent<Rigidbody>();
+      currentItem = ItemType.NONE;
    }
 
    void Update()
    {
-      if(shieldDuration <= 0){
-         shieldDuration = 0;
-         shieldActive = false;
-         hasItem = false;
-      }   
-      else
-         shieldDuration -= Time.deltaTime;      
+      if (shieldActive)
+      {
+         if (shieldDuration <= 0)
+         {
+            shieldDuration = 0;
+            shieldActive = false;
+            currentItem = ItemType.NONE;
+            GetComponent<MeshRenderer>().material.color = Color.red;
+
+         }
+         else
+            shieldDuration -= Time.deltaTime;
+      }
    }
 
    void FixedUpdate()
    {
       if (GameController.Instance.GameState == GameController.GameStateEnum.Running)
       {
-         if(hitByLaser || hitByMissile)
+         if (hitByLaser || hitByMissile)
             speed = 4;
          else
             speed = 8;
@@ -62,14 +75,15 @@ public class P1Controller : MonoBehaviour
             {
                if (touch.phase == TouchPhase.Began)
                {
-                  if(touch.tapCount == 2)
-                  { 
-                     shootLaser();                      
+                  if (touch.tapCount == 2)
+                  {
+                     useItem();
                   }
-                  if(!moving){                    
+                  if (!moving)
+                  {
                      trackedTouchId = touch.fingerId;
                      moving = true;
-                  }                  
+                  }
                }
                if ((touch.phase == TouchPhase.Stationary || touch.phase == TouchPhase.Moved))
                {
@@ -91,7 +105,7 @@ public class P1Controller : MonoBehaviour
                   moving = false;
                }
             }
-         
+
          }
       }
       else if (GameController.Instance.GameState == GameController.GameStateEnum.P1Scored ||
@@ -107,33 +121,54 @@ public class P1Controller : MonoBehaviour
 
    public void shootMissile()
    {
-      if (Time.time > nextFire)
+      if (missileAmmo > 0)
       {
-         nextFire = Time.time + fireRate;
-         GameObject missileClone = (GameObject)Instantiate(missile, missileSpawn.position, missileSpawn.rotation);
-         missileClone.GetComponent<HomingMissile>().SetParent(gameObject);
+         if (Time.time > nextFire)
+         {
+            nextFire = Time.time + fireRate;
+            GameObject missileClone = (GameObject)Instantiate(missile, missileSpawn.position, missileSpawn.rotation);
+            missileClone.GetComponent<HomingMissile>().SetParent(gameObject);
+            missileAmmo--;
+         }
+      }
+      if (missileAmmo == 0)
+      {
+         currentItem = ItemType.NONE;
+         itemText.text = "None";
       }
    }
 
    public void shootLaser()
    {
-      if (Time.time > nextFire)
+      if (laserAmmo > 0)
       {
-         nextFire = Time.time + fireRate;
-         GameObject laserClone = (GameObject)Instantiate(laser, laserSpawn.position, laserSpawn.rotation);
-         laserClone.GetComponent<LaserController>().SetParent(gameObject);
+         if (Time.time > nextFire)
+         {
+            nextFire = Time.time + fireRate;
+            GameObject laserClone = (GameObject)Instantiate(laser, laserSpawn.position, laserSpawn.rotation);
+            laserClone.GetComponent<LaserController>().SetParent(gameObject);
+            laserAmmo--;
+         }
       }
-   }   
+      if (laserAmmo == 0)
+      {
+         currentItem = ItemType.NONE;
+         itemText.text = "None";
+      }
+   }
 
    private IEnumerator SlowDownShip(float timeAmount, HitType hitType)
    {
-      if(hitType == HitType.LASER){
+      if (hitType == HitType.LASER)
+      {
          hitByLaser = true;
-         yield return new WaitForSeconds(timeAmount); 
+         yield return new WaitForSeconds(timeAmount);
          hitByLaser = false;
-      }else if(hitType == HitType.MISSILE){
+      }
+      else if (hitType == HitType.MISSILE)
+      {
          hitByMissile = true;
-         yield return new WaitForSeconds(timeAmount); 
+         yield return new WaitForSeconds(timeAmount);
          hitByMissile = false;
       }
    }
@@ -143,37 +178,80 @@ public class P1Controller : MonoBehaviour
       if (!shieldActive)
          StartCoroutine(SlowDownShip(3f, HitType.LASER));
    }
-   
+
    internal void MissileHit()
    {
       if (!shieldActive)
          StartCoroutine(SlowDownShip(5f, HitType.MISSILE));
    }
 
-   public void collectedShield()
+   public void collectItem(ItemType itemType)
    {
-      if (!hasItem)
+      if (!hasItem())
       {
-         shieldDuration = 10;
-         hasItem = true;
-         shieldActive = true;
+         switch (itemType)
+         {
+            case ItemType.SHIELD:
+               collectedShield();
+               break;
+            case ItemType.MISSILE:
+               collectedMissile();
+               break;
+            case ItemType.LASER:
+               collectedLaser();
+               break;
+         }
       }
    }
 
-   public void collectedLaser()
+   private void collectedShield()
    {
-      if (!hasItem)
+      currentItem = ItemType.SHIELD;
+      itemText.text = "Shield";
+   }
+
+   private void collectedLaser()
+   {
+      laserAmmo = 10;
+      currentItem = ItemType.LASER;
+
+   }
+   private void collectedMissile()
+   {
+      missileAmmo = 5;
+      currentItem = ItemType.MISSILE;
+      itemText.text = "Missile";
+
+   }
+
+   private void useItem()
+   {
+         Debug.Log("current item" + currentItem);
+      switch (currentItem)
       {
-         laserAmmo = 10;
-         hasItem = true;
+         case ItemType.SHIELD:
+            activateShield();
+            break;
+         case ItemType.MISSILE:
+            shootMissile();
+            break;
+         case ItemType.LASER:
+            shootLaser();
+            break;
       }
    }
-   public void collectedMissile()
+
+   private void activateShield()
    {
-      if (!hasItem)
-      {
-         missileAmmo = 5;
-         hasItem = true;
-      }
+      GetComponent<MeshRenderer>().material.color = Color.blue;
+
+      shieldDuration = 10;
+      shieldActive = true;
+      itemText.text = "None";
+   }
+
+   private bool hasItem()
+   {
+      return currentItem != ItemType.NONE;
    }
 }

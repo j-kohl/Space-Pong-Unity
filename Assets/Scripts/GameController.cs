@@ -60,7 +60,6 @@ public class GameController : MonoBehaviour {
 	}
 
 	public void StartGame(){
-		 Debug.Log("GameState"+GameState);
 		if(GameState == GameStateEnum.P1Scored){
 			ball.SetInitialDirection(-1);
 			GameState = GameStateEnum.Running;
@@ -71,7 +70,6 @@ public class GameController : MonoBehaviour {
 			GameState = GameStateEnum.Running;
 		}
 		if(GameState == GameStateEnum.GameStart){
-		 Debug.Log("trigger enter");
 			ball.SetInitialDirection(UnityEngine.Random.Range(0,2) > 0.5 ? -1 : 1);
 			GameState = GameStateEnum.Running;
 		}
@@ -83,20 +81,19 @@ public class GameController : MonoBehaviour {
 		}
 	}
 
-   internal void MissileCollectibleHit(int lastPLayerHit)
+   internal void CollectibleHit(int lastPlayerHit, P1Controller.ItemType itemType)
    {
-	throw new NotImplementedException();
-   }
-
-   internal void LaserCollectibleHit(int lastPLayerHit)
-   {
-      throw new NotImplementedException();
-   }
-
-   internal void ShieldCollectibleHit(int lastPLayerHit)
-   {
-      throw new NotImplementedException();
-   }
+      switch(lastPlayerHit){
+			case 1:
+				p1Controller.collectItem(itemType);
+				break;
+			case 2:
+				p2Controller.collectItem(itemType);
+				break;
+			default:
+				break;
+		}
+   }   
 
    void AddScore(int player){
 		switch (player){

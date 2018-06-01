@@ -95,6 +95,14 @@ public class P2Controller : MonoBehaviour
       }
    }
 
+   internal void collectItem(P1Controller.ItemType itemType)
+   {
+   }
+
+   internal void collectedMissile()
+   {
+   }
+
    internal void MissileHit()
    {
       StartCoroutine(SlowDownShip(5f, HitType.MISSILE));
